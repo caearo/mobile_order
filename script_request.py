@@ -143,7 +143,7 @@ if __name__ == '__main__':
 	for i in range(100):
 		print "进行第%d次尝试..." % i
 		seq = get_seq(session, conf["url_getseq"], cookies)
-		
+		time.sleep(3.4)
 		res = get_task(session, conf["url_gettask"], cookies, seq)
 		if 0 == res:
 			print "成功，请前往订单完成操作"
@@ -152,7 +152,7 @@ if __name__ == '__main__':
 			print "请先完成进行中的任务"
 			break
 
-		time.sleep(3.6)
+		time.sleep(3.4)
 		os.system("afplay /System/Library/Sounds/Tink.aiff")
 	os.system("say 'Quit, please check your order.'")
 
