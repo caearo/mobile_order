@@ -100,7 +100,7 @@ def get_seq(session, url_getseq, cookies):
 
 
 def get_task(session, url_gettask, cookies, SEQ):
-	param = {"id":"6", "count":"1", "SEQ":SEQ}
+	param = {"id":"5", "count":"1", "SEQ":SEQ} # id:1,2,5,4,11,12,13,15
 	assert loginRes == 0
 	resp = session.post(url_gettask,
 			data = param)
@@ -112,7 +112,7 @@ def get_task(session, url_gettask, cookies, SEQ):
 		return -2
 	if -1 != resp.text.encode('utf-8').find("慢点来"):
 		print "请求太快，少许等待..."
-		time.sleep(4)
+		time.sleep(2)
 		return -1
 	if -1 != resp.text.encode('utf-8').find("成功获取订单"):
 		return 0
@@ -137,13 +137,14 @@ def test():
 
 if __name__ == '__main__':
 	import os
+	INTERVAL = 2.1
 	conf = load_cofiguration()
 	loginRes, session, cookies = login()
 	assert loginRes == 0
-	for i in range(100):
+	for i in range(200):
 		print "进行第%d次尝试..." % i
 		seq = get_seq(session, conf["url_getseq"], cookies)
-		time.sleep(3.4)
+		time.sleep( INTERVAL )
 		res = get_task(session, conf["url_gettask"], cookies, seq)
 		if 0 == res:
 			print "成功，请前往订单完成操作"
@@ -152,8 +153,9 @@ if __name__ == '__main__':
 			print "请先完成进行中的任务"
 			break
 
-		time.sleep(3.4)
+		time.sleep( INTERVAL )
 		os.system("afplay /System/Library/Sounds/Tink.aiff")
+	
 	os.system("say 'Quit, please check your order.'")
 
 	#test()
