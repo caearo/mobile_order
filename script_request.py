@@ -56,36 +56,21 @@ def login():
 			data = data_login)
 	
 
-	### 201805
-	### 改版之前，通过是否跳转来判定登陆成功与否
-	'''
-	b_login = False
-	try:
-		if -1 != resp.headers["refresh"].split(";")[1].find(conf["keyword_login"]):
-			b_login = True
-	except Exception, e:
-		#raise e
-		pass
-	'''
-
 	b_login = False
 	resp = sessLogin.get( conf["url_index"] )
 	if -1 != resp.text.find("notice_list"):
 		b_login = True
-		
+
+
 	if b_login:
 		# Get order page.
-		print 'logined'
 		resp_order = sessLogin.get( conf["url_order"] )
 
 		if 200 == resp.status_code:
 			print "get order"
-			if -1 != resp_order.text[:500].find(conf["keyword_order"]):
+			if -1 != resp_order.text.find(conf["keyword_order"]):
 				print "Loged in."
 				return 0, sessLogin, captcha.cookies
-
-				resp_task = sessLogin.get( conf["url_getseq"] )
-				print len(resp_task.text)
 	else:
 		print "Login failed."
 		return -1, 0, 0
@@ -96,7 +81,17 @@ def get_seq(session, url_getseq, cookies):
 	resp = session.get(url_getseq)#, cookies = requests.utils.dict_from_cookiejar(cookies))
 	#print '* Getting SEQ res:', resp.status_code
 	string = resp.text
-	if -1 != string.encode("utf-8").find("请先完成进行中的任务"):
+	if len(resp.text) < 1000:
+		msg = resp.text.decode('unicode_escape').encode('utf-8')
+		print "get_seq:" + msg
+		if -1 != msg.find('慢点来'):
+			print 'get_seq:请求太快，少许等待...'
+			time.sleep(2)
+			return -3
+		elif -1 != msg.find('请先完成'):
+			return 1
+
+	if -1 != string.encode("utf-8").find("请先完成"):
 		return -2
 	pos = string.find("SEQ")
 	if -1 != pos:
@@ -111,18 +106,19 @@ def get_seq(session, url_getseq, cookies):
 
 
 def get_task(session, url_gettask, cookies, SEQ):
-	param = {"id":"15", "count":"1", "SEQ":SEQ} # id:1,2,3,5,11,12,13,15
+	param = {"id":"13", "count":"1", "SEQ":SEQ} # id:1,2,3,5,11,12,13,15
 	assert loginRes == 0
 	resp = session.post(url_gettask,
 			data = param)
 			#allow_redirects = False)
 	#print '* Getting task res:', resp.status_code
-	pos = resp.text.encode('utf-8').find("tip_message('")
+	pos = resp.text.encode('utf-8').find(" tip_message(' ")
+	print "get_task:pos",pos
 	print resp.text.encode('utf-8')[pos:pos+60]
 	if -1 != resp.text.encode('utf-8').find("最近24小时"):
-		return -2
+		return 1
 	if -1 != resp.text.encode('utf-8').find("慢点来"):
-		print "请求太快，少许等待..."
+		print "get_task:请求太快，少许等待..."
 		time.sleep(2)
 		return -1
 	if -1 != resp.text.encode('utf-8').find("成功获取订单"):
@@ -146,23 +142,23 @@ def test():
 			print pos
 			print string[ pos+len("value=\"") : string.find("\"", pos+len("value=\"")) ]
 
+
 if __name__ == '__main__':
 	import os
 	INTERVAL = 1.9
 	conf = load_cofiguration()
 	loginRes, session, cookies = login()
 	assert loginRes == 0
-	print loginRes
-	assert 1 == 0
 	for i in range(200):
 		print "进行第%d次尝试..." % i
 		seq = get_seq(session, conf["url_getseq"], cookies)
+
 		time.sleep( INTERVAL )
 		res = get_task(session, conf["url_gettask"], cookies, seq)
 		if 0 == res:
 			print "成功，请前往订单完成操作"
 			break
-		elif -2 == res:
+		elif 1 == res or 1 == seq:
 			print "请先完成进行中的任务"
 			break
 
