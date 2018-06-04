@@ -56,6 +56,9 @@ def login():
 			data = data_login)
 	
 
+	### 201805
+	### 改版之前，通过是否跳转来判定登陆成功与否
+	'''
 	b_login = False
 	try:
 		if -1 != resp.headers["refresh"].split(";")[1].find(conf["keyword_login"]):
@@ -63,12 +66,20 @@ def login():
 	except Exception, e:
 		#raise e
 		pass
+	'''
 
+	b_login = False
+	resp = sessLogin.get( conf["url_index"] )
+	if -1 != resp.text.find("notice_list"):
+		b_login = True
+		
 	if b_login:
 		# Get order page.
+		print 'logined'
 		resp_order = sessLogin.get( conf["url_order"] )
 
 		if 200 == resp.status_code:
+			print "get order"
 			if -1 != resp_order.text[:500].find(conf["keyword_order"]):
 				print "Loged in."
 				return 0, sessLogin, captcha.cookies
@@ -100,7 +111,7 @@ def get_seq(session, url_getseq, cookies):
 
 
 def get_task(session, url_gettask, cookies, SEQ):
-	param = {"id":"5", "count":"1", "SEQ":SEQ} # id:1,2,5,4,11,12,13,15
+	param = {"id":"15", "count":"1", "SEQ":SEQ} # id:1,2,3,5,11,12,13,15
 	assert loginRes == 0
 	resp = session.post(url_gettask,
 			data = param)
@@ -137,10 +148,12 @@ def test():
 
 if __name__ == '__main__':
 	import os
-	INTERVAL = 2.1
+	INTERVAL = 1.9
 	conf = load_cofiguration()
 	loginRes, session, cookies = login()
 	assert loginRes == 0
+	print loginRes
+	assert 1 == 0
 	for i in range(200):
 		print "进行第%d次尝试..." % i
 		seq = get_seq(session, conf["url_getseq"], cookies)
